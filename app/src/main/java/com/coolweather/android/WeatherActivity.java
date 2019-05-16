@@ -4,11 +4,15 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Build;
 import android.preference.PreferenceManager;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -30,6 +34,9 @@ import okhttp3.Callback;
 import okhttp3.Response;
 
 public class WeatherActivity extends AppCompatActivity {
+    public DrawerLayout drawerLayout;
+    private Button navButton;
+    public SwipeRefreshLayout swipeRefresh;
     private static final String TAG = "WeatherActivity";
     private ScrollView weatherLayout;
     private TextView titleCity;
@@ -54,6 +61,8 @@ public class WeatherActivity extends AppCompatActivity {
         }
         setContentView(R.layout.activity_weather);
         weatherLayout = findViewById(R.id.weather_layout);
+        drawerLayout = findViewById(R.id.drawer_layout);
+        navButton = findViewById(R.id.nav_button);
         titleCity = findViewById(R.id.title_city);
         titleUpdateTime = findViewById(R.id.title_update_time);
         degreeText = findViewById(R.id.degree_text);
@@ -63,24 +72,33 @@ public class WeatherActivity extends AppCompatActivity {
         carWashText = findViewById(R.id.car_wash_text);
         sportText = findViewById(R.id.sport_text);
         bingPicImg = findViewById(R.id.bing_ic_img);
+        swipeRefresh = findViewById(R.id.swipe_refresh);
+        swipeRefresh.setColorSchemeResources(R.color.colorPrimary);
+//        缓存
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences
                 (this);
         String weatherString = prefs.getString("weather",null);
+        final String weatherId;
         if(weatherString != null){
             Weather weather = Utility.handleWeatherResponse(weatherString);
+            weatherId = weather.basic.weatherId;
             showWeatherInfo(weather);
-//            这里出了问题，好像是因为对象不存在
         }else{
-            String weatherId = getIntent().getStringExtra("weather_id");
+            weatherId = getIntent().getStringExtra("weather_id");
             weatherLayout.setVisibility(View.INVISIBLE);
             requestWeather(weatherId);
         }
+//        这里改成了lambda表达式，可能会出错
+        swipeRefresh.setOnRefreshListener(()->requestWeather(weatherId));
         String bingPic = prefs.getString("bing_pic",null);
         if(bingPic != null){
             Glide.with(this).load(bingPic).into(bingPicImg);
         }else{
             loadBingPic();
         }
+//        这里改成了lambda表达式，可能会出错
+//        用来打开菜单（那个用手势的是怎样的来着？）
+        navButton.setOnClickListener((view)->drawerLayout.openDrawer(GravityCompat.START));
     }
     public void requestWeather(final String weatherId){
         String weatherUrl = "https://free-api.heweather.net/s6/weather/?location=" +
@@ -92,6 +110,7 @@ public class WeatherActivity extends AppCompatActivity {
             public void onFailure(Call call, IOException e) {
                 runOnUiThread(()-> Toast.makeText(WeatherActivity.this,"获取信息失败",
                             Toast.LENGTH_SHORT).show());
+                swipeRefresh.setRefreshing(false);
             }
 
             @Override
@@ -112,6 +131,7 @@ public class WeatherActivity extends AppCompatActivity {
                         Toast.makeText(WeatherActivity.this,"获取天气信息失败",
                                 Toast.LENGTH_SHORT).show();
                     }
+                    swipeRefresh.setRefreshing(false);
                 });
             }
         });
