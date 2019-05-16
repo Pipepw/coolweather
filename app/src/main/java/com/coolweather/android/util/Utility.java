@@ -5,10 +5,13 @@ import android.text.TextUtils;
 import com.coolweather.android.db.City;
 import com.coolweather.android.db.County;
 import com.coolweather.android.db.Province;
+import com.coolweather.android.gson.Weather;
+import com.google.gson.Gson;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
 //用来处理返回的数据的，而现在我根本就得不到数据
 public class Utility {
     public static boolean handleProvinceResponse(String response){
@@ -56,7 +59,7 @@ public class Utility {
                     JSONObject countyObject = allCounties.getJSONObject(i);
                     County county = new County();
                     county.setCountyName(countyObject.getString("name"));
-                    county.setWeatherId(countyObject.getInt("weather_id"));
+                    county.setWeatherId(countyObject.getString("weather_id"));
                     county.setCityId(cityId);
                     county.save();
                 }
@@ -66,5 +69,19 @@ public class Utility {
             }
         }
         return false;
+    }
+    public static Weather handleWeatherResponse(String response){
+        try{
+            JSONObject jsonObject = new JSONObject(response);
+//            "name"对应数据头
+            JSONArray jsonArray = jsonObject.getJSONArray("HeWeather6");
+//            通过getJSONObject获取网页的中信息
+            String weatherContent = jsonArray.getJSONObject(0).toString();
+//            fromJson()方法，第二个参数便是实体类，用于映射；第一个参数是网页的内容，这样就把两者联系起来了
+            return new Gson().fromJson(weatherContent,Weather.class);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }

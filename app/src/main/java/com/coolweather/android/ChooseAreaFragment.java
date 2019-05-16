@@ -1,6 +1,7 @@
 package com.coolweather.android;
 
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.util.Log;
@@ -72,6 +73,13 @@ public class ChooseAreaFragment extends Fragment {
             } else if (currentLevel == LEVEL_CITY) {
                 selectedCity = cityList.get(position);
                 queryCounties();
+            }else if(currentLevel == LEVEL_COUNTY){
+                String weatherId = countyList.get(position).getWeatherId();
+                Intent intent = new Intent(getActivity(), WeatherActivity.
+                        class);
+                intent.putExtra("weather_id",weatherId);
+                startActivity(intent);
+                getActivity().finish();
             }
         });
         backButton.setOnClickListener(v -> {
@@ -97,10 +105,8 @@ public class ChooseAreaFragment extends Fragment {
             listView.setSelection(0);
             currentLevel = LEVEL_PROVINCE;
         }else{
-            Log.d(TAG, "queryProvinces: kkk10");
             String address = "http://guolin.tech/api/china";
             queryFromServer(address,"province");
-            Log.d(TAG, "queryProvinces: kkk14");
         }
     }
     private void queryCities(){
@@ -146,7 +152,6 @@ public class ChooseAreaFragment extends Fragment {
     private void queryFromServer(String address, final String type){
         showProgressDialog();
 
-        Log.d(TAG, "queryFromServer: kkk333");
 //        Callback是用来回调的
         HttpUtil.sendOkHttpRequest(address, new Callback() {
 //            回调获得服务器中的数据，new Callback()只是声明了一个接口对象，对接口方法的实现在下面
@@ -154,7 +159,6 @@ public class ChooseAreaFragment extends Fragment {
             @Override
             public void onResponse(Call call, Response response) throws IOException {
 
-                Log.d(TAG, "onResponse: kkk202");
                 String responseText = response.body().string();
                 boolean result = false;
                 if("province".equals(type)){
@@ -187,12 +191,13 @@ public class ChooseAreaFragment extends Fragment {
         });
     }
     private void showProgressDialog(){
+
         if(progressDialog == null){
-            Log.d(TAG, "showProgressDialog: kkk203");
             progressDialog = new ProgressDialog(getActivity());
             progressDialog.setMessage("正在加载....");
             progressDialog.setCanceledOnTouchOutside(false);
         }
+        progressDialog.show();
     }
     private void closeProgressDialog(){
         if(progressDialog != null){
